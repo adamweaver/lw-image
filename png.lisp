@@ -105,7 +105,7 @@
                  (incf pos len))
         
         (when (zerop (compression-method png))
-          (setf (data png) (crypto:decompress (data png))))
+          (setf (data png) (zlib:decompress (data png))))
         
         (setf (byte-arrays png) (case (ctype png)
                                   (:palette (make-palette-byte-arrays png))
@@ -135,11 +135,11 @@
                       (when alpha
                         (setf (aref alpha (+ x (* y width))) (if (< idx (length transparency)) (aref transparency idx) 255)))))
     
-    (list (crypto:compress colour) (when alpha (crypto:compress alpha)))))
+    (list (zlib:compress colour) (when alpha (zlib:compress alpha)))))
 
 (defun make-byte-arrays (png)
   (let ((data (deinterlace png)) (trans (when (transparency png) (chunk-data (transparency png)))))
-    (list (crypto:compress data)
+    (list (zlib:compress data)
           (when trans (loop for i below (length trans) by 2 collect (logior (ash (aref trans i) 8) (aref trans (1+ i))))))))
 
 (defun make-alpha-byte-arrays (png components)
@@ -158,7 +158,7 @@
                    do (replace colour data :start1 o-start :start2 i-start :end2 (+ i-start c-len))
                       (replace alpha data :start1 (+ (* x a-len) (* y width a-len)) :start2 (+ i-start c-len) :end2 (+ i-start len))))
     
-    (list (crypto:compress colour) (crypto:compress alpha))))
+    (list (zlib:compress colour) (zlib:compress alpha))))
 
 (defun deinterlace (png)
   (if (zerop (interlace-method png))

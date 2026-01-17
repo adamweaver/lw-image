@@ -10,7 +10,7 @@
 
 (defun load-svg (src)
   (labels ((attr! (x name)
-             (let ((value (xml:has-attr x #'forth:fnumber! name 0)))
+             (let ((value (xml:has-attr x #'conv:float! name 0)))
                (multiple-value-bind (real frac) (truncate value)
                  (if (zerop frac)
                      real
@@ -26,11 +26,11 @@
              (or (position v #("miter" "round" "bevel") :test #'string-equal) 0))
            
            (collect (x)
-             (case* #'string-equal (xml:node-tag x)
-                    ("svg" (make-svg x))
-                    ("path" (make-path x))
-                    (t nil)))
-           
+             (let ((tag (xml:node-tag x)))
+               (cond ((string-equal tag "svg") (make-svg x))
+                     ((string-equal tag "path") (make-path x))
+                     (t nil))))
+
            (lex-number (string start)
              (let* ((e (position-if-not #'digit-char-p string :start (1+ start)))
                     (whole (or (ignore-errors (parse-integer string :start start :end e)) 0)))
@@ -168,9 +168,9 @@
                             (loop while (numberp (car *cmds*))
                                   nconc (let ((x (aref *coords* 0)) (y (aref *coords* 1)) (rx (next)) (ry (next)) (angle (next))
                                               (large-arc-flag (plusp (next))) (sweep-flag (plusp (next))) (end-x (next)) (end-y (next)))
-                                          (when-let (curves (convert-arc-to-bezier (cons (setf (aref *coords* 0) (+ end-x off-x))
-                                                                                         (setf (aref *coords* 1) (+ end-y off-y)))
-                                                                                   rx ry angle large-arc-flag sweep-flag x y))
+                                          (lw:when-let (curves (convert-arc-to-bezier (cons (setf (aref *coords* 0) (+ end-x off-x))
+                                                                                            (setf (aref *coords* 1) (+ end-y off-y)))
+                                                                                      rx ry angle large-arc-flag sweep-flag x y))
                                             (cons :curve3 curves)))))
                            
                            ((#\Z #\z) (list :stroke)))))
